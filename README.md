@@ -12,4 +12,4 @@
 
 * Open Cargo.toml to see the list of available programs
 
-![alt text](https://github.com/carlosvneto/wgpu-lighting/blob/main/images/ebook_cover.png?raw=true)
+![alt text](https://github.com/carlosvneto/wgpu-lighting/blob/main/images/ebook_cover.jpg?raw=true)
