@@ -1,0 +1,54 @@
+[package]
+name = "wgpu_lighting"
+version = "0.1.1"
+edition = "2021"
+
+[dependencies]
+bytemuck = { version = "1.20.0", features = [ "derive" ] }
+cgmath = "0.18.0"
+env_logger = "0.11.5"
+log = "0.4.22"
+pollster = "0.4.0"
+rand = "0.8.5"
+wgpu = "23.0.1"
+winit = "0.30.5"
+
+[[example]]
+name = "blinn_phong_cube"
+path = "ch01/01_blinn_phong_cube/main.rs"
+
+[[example]]
+name = "blinn_phong_sphere"
+path = "ch01/02_blinn_phong_sphere/main.rs"
+
+[[example]]
+name = "blinn_phong_torus"
+path = "ch01/03_blinn_phong_torus/main.rs"
+
+[[example]]
+name = "directional_light"
+path = "ch02/01_directional_light/main.rs"
+
+[[example]]
+name = "point_light"
+path = "ch03/01_point_light/main.rs"
+
+[[example]]
+name = "fog_effect"
+path = "ch03/02_fog_effect/main.rs"
+
+[[example]]
+name = "spot_light"
+path = "ch04/01_spot_light/main.rs"
+
+[[example]]
+name = "soft_spot_light"
+path = "ch04/02_soft_spot_light/main.rs"
+
+[[example]]
+name = "pbr"
+path = "ch05/01_pbr/main.rs"
+
+[[example]]
+name = "shadow"
+path = "ch06/01_shadow/main.rs"
