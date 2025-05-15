@@ -23,7 +23,7 @@ fn create_transform_mat() -> (Vec<Scene>, Vec<[f32; 16]>, Vec<[f32; 16]>, Vec<[f
     let mut normal_mat: Vec<[f32; 16]> = vec![];
     let mut color_vec: Vec<[f32; 4]> = vec![];
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     // add a cube as floor
     let translation_cube = [0.0f32, -13.0, -20.0];
@@ -48,7 +48,7 @@ fn create_transform_mat() -> (Vec<Scene>, Vec<[f32; 16]>, Vec<[f32; 16]>, Vec<[f
     let scale_torus = [4.0f32, 4.0, 4.0];
     let m_torus = ws::create_model_mat(translation_torus, rotation_torus, scale_torus);
     let n_torus = (m_torus.invert().unwrap()).transpose();
-    let c_torus = [rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>(), 1.0];
+    let c_torus = [rng.random::<f32>(), rng.random::<f32>(), rng.random::<f32>(), 1.0];
     model_mat.push(*(m_torus.as_ref()));
     normal_mat.push(*(n_torus.as_ref()));
     color_vec.push(c_torus);
@@ -62,24 +62,24 @@ fn create_transform_mat() -> (Vec<Scene>, Vec<[f32; 16]>, Vec<[f32; 16]>, Vec<[f
     // add spheres
     for _i in 2..20 {
         let mut v1 = -1.0f32;
-        if rng.gen::<f32>() > 0.5 {
+        if rng.random::<f32>() > 0.5 {
             v1 = 1.0;
         }
-        let tx = v1 * (4.0 + rng.gen::<f32>() * 12.0);
-        let translation_sphere = [tx, -11.0 + rng.gen::<f32>() * 15.0, -20.0 + tx];
-        let rotation_sphere = [rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>()];
-        let s = [0.5f32, rng.gen::<f32>()]
+        let tx = v1 * (4.0 + rng.random::<f32>() * 12.0);
+        let translation_sphere = [tx, -11.0 + rng.random::<f32>() * 15.0, -20.0 + tx];
+        let rotation_sphere = [rng.random::<f32>(), rng.random::<f32>(), rng.random::<f32>()];
+        let s = [0.5f32, rng.random::<f32>()]
             .iter()
             .fold(f32::NEG_INFINITY, |a, &b| a.max(b));
         let scale_sphere = [s, s, s];
         let m_sphere = ws::create_model_mat(translation_sphere, rotation_sphere, scale_sphere);
         let n_sphere = (m_torus.invert().unwrap()).transpose();
-        let c_sphere = [rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>(), 1.0];
+        let c_sphere = [rng.random::<f32>(), rng.random::<f32>(), rng.random::<f32>(), 1.0];
         model_mat.push(*(m_sphere.as_ref()));
         normal_mat.push(*(n_sphere.as_ref()));
         color_vec.push(c_sphere);
         let v = v1
-            * [0.09, rng.gen::<f32>() / 10.0]
+            * [0.09, rng.random::<f32>() / 10.0]
                 .iter()
                 .fold(f32::NEG_INFINITY, |a, &b| a.max(b));
         scenes.push(Scene {

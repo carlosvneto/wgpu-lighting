@@ -116,24 +116,24 @@ pub fn create_transform_mat_color(
     let mut color_vec: Vec<[f32; 4]> = vec![];
 
     for _i in 0..objects_count {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut translation = [
-            rng.gen::<f32>() * 60.0 - 53.0,
-            rng.gen::<f32>() * 50.0 - 45.0,
-            -15.0 - rng.gen::<f32>() * 50.0,
+            rng.random::<f32>() * 60.0 - 53.0,
+            rng.random::<f32>() * 50.0 - 45.0,
+            -15.0 - rng.random::<f32>() * 50.0,
         ];
         if !translate_default {
             translation = [
-                rng.gen::<f32>() * 50.0 - 25.0,
-                rng.gen::<f32>() * 40.0 - 18.0,
-                -30.0 - rng.gen::<f32>() * 50.0,
+                rng.random::<f32>() * 50.0 - 25.0,
+                rng.random::<f32>() * 40.0 - 18.0,
+                -30.0 - rng.random::<f32>() * 50.0,
             ];
         }
-        let rotation = [rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>()];
+        let rotation = [rng.random::<f32>(), rng.random::<f32>(), rng.random::<f32>()];
         let scale = [1.0, 1.0, 1.0];
         let m = ws::create_model_mat(translation, rotation, scale);
         let n = (m.invert().unwrap()).transpose();
-        let color = [rng.gen::<f32>(), rng.gen::<f32>(), rng.gen::<f32>(), 1.0];
+        let color = [rng.random::<f32>(), rng.random::<f32>(), rng.random::<f32>(), 1.0];
         model_mat.push(*(m.as_ref()));
         normal_mat.push(*(n.as_ref()));
         color_vec.push(color);
