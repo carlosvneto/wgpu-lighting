@@ -1,5 +1,4 @@
 use app::Application;
-use std::error::Error;
 use winit::event_loop::EventLoop;
 
 mod app;
@@ -9,7 +8,7 @@ fn main() {
     let title = "ch06 shadow mapping";
     let _ = run(title);
 
-    pub fn run(title: &str) -> Result<(), Box<dyn Error>> {
+    pub fn run(title: &'static str) -> anyhow::Result<()> {
         env_logger::init();
 
         let event_loop = EventLoop::builder().build()?;

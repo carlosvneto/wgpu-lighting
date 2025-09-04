@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use bytemuck::cast_slice;
 use cgmath::Matrix;
 use cgmath::Matrix4;
@@ -37,8 +38,8 @@ pub struct Vertex {
     pub normal: [f32; 3],
 }
 
-pub struct State<'a> {
-    init: ws::InitWgpu<'a>,
+pub struct State {
+    init: ws::InitWgpu,
     pipelines: Vec<wgpu::RenderPipeline>,
     vertex_buffer: wgpu::Buffer,
     index_buffers: Vec<wgpu::Buffer>,
@@ -58,12 +59,12 @@ pub struct State<'a> {
     shininess: f32,
 }
 
-impl<'a> State<'a> {
+impl State {
     pub async fn new(
-        window: Window,
-        vertex_data: &'a Vec<Vertex>,
-        index_data: &'a Vec<u16>,
-        index_data2: &'a Vec<u16>,
+        window: Arc<Window>,
+        vertex_data: &Vec<Vertex>,
+        index_data: &Vec<u16>,
+        index_data2: &Vec<u16>,
         sample_count: u32,
     ) -> Self {
         let init = ws::InitWgpu::init_wgpu(window, sample_count).await;

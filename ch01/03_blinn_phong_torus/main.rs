@@ -6,7 +6,6 @@ mod state;
 
 use wgpu_lighting::vertex_data as vd;
 
-use std::error::Error;
 use winit::event_loop::EventLoop;
 
 use crate::app::Application;
@@ -42,7 +41,7 @@ fn main() {
         index_data2: &Vec<u16>,
         sample_count: u32,
         title: &str,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> anyhow::Result<()>  {
         env_logger::init();
 
         let event_loop = EventLoop::builder().build()?;

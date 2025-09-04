@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use bytemuck::cast_slice;
 use cgmath::Matrix4;
 use std::mem;
@@ -13,8 +14,8 @@ const NUM_CUBES: u32 = 50;
 const NUM_SPHERES: u32 = 50;
 const NUM_TORI: u32 = 50;
 
-pub struct State<'a> {
-    init: ws::InitWgpu<'a>,
+pub struct State {
+    init: ws::InitWgpu,
     pipeline: wgpu::RenderPipeline,
     vertex_buffers: Vec<wgpu::Buffer>,
     index_buffers: Vec<wgpu::Buffer>,
@@ -31,8 +32,8 @@ pub struct State<'a> {
     roughness: f32,
 }
 
-impl<'a> State<'a> {
-    pub async fn new(window: Window, sample_count: u32) -> Self {
+impl State {
+    pub async fn new(window: Arc<Window>, sample_count: u32) -> Self {
         let init = ws::InitWgpu::init_wgpu(window, sample_count).await;
 
         let vs_shader = init.device.create_shader_module(wgpu::include_wgsl!(

@@ -3,8 +3,8 @@
 * wgpu Graphics eBook Series (2)
 * A Comprehensive Guide to Basic and Advanced Concepts
 
-* Tested programs under macOS Sequoia 15.5 and Windows 11
-* Upgraded programs to wgpu version 25.0.0 and winit version 0.30.10
+* Tested programs under macOS Sequoia 15.6.1 and Windows 11
+* Upgraded programs to wgpu version 26.0.1 and winit version 0.30.12
 
 * Compile and run programs:
 * cargo run --example blinn_phong_cube

@@ -10,7 +10,7 @@ use winit::{
 use crate::state::{State, Vertex};
 
 pub struct Application<'a> {
-    state: Option<State<'a>>,
+    state: Option<State>,
     vertex_data: &'a Vec<Vertex>,
     index_data: &'a Vec<u16>,
     index_data2: &'a Vec<u16>,
@@ -48,18 +48,18 @@ impl<'a> ApplicationHandler for Application<'a> {
             .create_window(window_attributes)
             .expect("Failed to create window");
 
-        let state = pollster::block_on(async {
+        self.state = Some(pollster::block_on(async {
             State::new(
-                window,
+                window.into(),
                 self.vertex_data,
                 self.index_data,
                 self.index_data2,
                 self.sample_count,
             )
             .await
-        });
+        }));
 
-        self.state = Some(state);
+        //self.state = Some(state);
 
         self.render_start_time = Some(time::Instant::now());
     }

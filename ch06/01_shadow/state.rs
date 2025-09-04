@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use bytemuck::cast_slice;
 use cgmath::{Matrix, Matrix4, SquareMatrix};
 use rand::Rng;
@@ -93,8 +94,8 @@ fn create_transform_mat() -> (Vec<Scene>, Vec<[f32; 16]>, Vec<[f32; 16]>, Vec<[f
     (scenes, model_mat, normal_mat, color_vec)
 }
 
-pub struct State<'a> {
-    init: ws::InitWgpu<'a>,
+pub struct State {
+    init: ws::InitWgpu,
     pipelines: Vec<wgpu::RenderPipeline>,
     vertex_buffers: Vec<wgpu::Buffer>,
     index_buffers: Vec<wgpu::Buffer>,
@@ -115,8 +116,8 @@ pub struct State<'a> {
     shininess: f32,
 }
 
-impl<'a> State<'a> {
-    pub async fn new(window: Window, _sample_count: u32) -> Self {
+impl State {
+    pub async fn new(window: Arc<Window>, _sample_count: u32) -> Self {
         let init = ws::InitWgpu::init_wgpu(window, 1).await;
 
         let vs_shader = init
