@@ -1,8 +1,10 @@
-use app::Application;
-use winit::event_loop::EventLoop;
-
+#[path = "../../common/app.rs"]
 mod app;
+
 mod state;
+
+use winit::event_loop::EventLoop;
+use app::App;
 
 fn main() {
     let mut sample_count = 1 as u32;
@@ -17,8 +19,8 @@ fn main() {
     pub fn run(title: &'static str, sample_count: u32) -> anyhow::Result<()> {
         env_logger::init();
 
-        let event_loop = EventLoop::builder().build()?;
-        let mut app = Application::new(title, sample_count, None);
+        let event_loop = EventLoop::with_user_event().build()?;
+        let mut app = App::new(title, sample_count, None);
 
         event_loop.run_app(&mut app)?;
 

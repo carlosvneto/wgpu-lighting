@@ -1,8 +1,10 @@
-use app::Application;
-use winit::event_loop::EventLoop;
-
+#[path = "../../common/app.rs"]
 mod app;
+
 mod state;
+
+use winit::event_loop::EventLoop;
+use app::App;
 
 fn main() {
     let title = "ch06 shadow mapping";
@@ -11,8 +13,8 @@ fn main() {
     pub fn run(title: &'static str) -> anyhow::Result<()> {
         env_logger::init();
 
-        let event_loop = EventLoop::builder().build()?;
-        let mut app = Application::new(title, 1, None);
+        let event_loop = EventLoop::with_user_event().build()?;
+        let mut app = App::new(title, 1, None);
 
         event_loop.run_app(&mut app)?;
 

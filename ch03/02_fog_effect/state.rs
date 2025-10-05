@@ -3,7 +3,9 @@ use bytemuck::cast_slice;
 use cgmath::Matrix4;
 use std::mem;
 use winit::{
-    event::ElementState, event::KeyEvent, event::WindowEvent, keyboard::Key, window::Window,
+    event_loop::ActiveEventLoop,
+    keyboard::KeyCode,
+    window::Window,
 };
 
 use wgpu_lighting::common_instance;
@@ -250,22 +252,17 @@ impl State {
         &self.init.window
     }
 
-    pub fn size(&self) -> winit::dpi::PhysicalSize<u32> {
-        self.init.size
-    }
-
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.init.size = new_size;
+    pub fn resize(&mut self, width: u32, height: u32) {
+        if width > 0 && height > 0 {
             // The surface needs to be reconfigured every time the window is resized.
-            self.init.config.width = new_size.width;
-            self.init.config.height = new_size.height;
+            self.init.config.width = width;
+            self.init.config.height = height;
             self.init
                 .surface
                 .configure(&self.init.device, &self.init.config);
 
             self.project_mat =
-                ws::create_projection_mat(new_size.width as f32 / new_size.height as f32, true);
+                ws::create_projection_mat(width as f32 / height as f32, true);
             self.depth_texture_view = ws::create_depth_view(&self.init);
             if self.init.sample_count > 1 {
                 self.msaa_texture_view = ws::create_msaa_texture_view(&self.init);
@@ -273,86 +270,66 @@ impl State {
         }
     }
 
-    pub fn input(&mut self, event: &WindowEvent) -> bool {
-        match event {
-            WindowEvent::KeyboardInput {
-                event:
-                    KeyEvent {
-                        logical_key: key,
-                        state: ElementState::Pressed,
-                        ..
-                    },
-                ..
-            } => match key.as_ref() {
-                Key::Character("q") => {
-                    self.ambient += 0.01;
-                    return true;
+    pub fn handle_key(&mut self, event_loop: &ActiveEventLoop, key: KeyCode, pressed: bool) {
+        match (key, pressed) {
+            (KeyCode::Escape, true) => {
+                event_loop.exit();
+            } 
+            (KeyCode::KeyQ, _pressed) => {
+                self.ambient += 0.01;
+            }
+            (KeyCode::KeyA, _pressed) => {
+                self.ambient -= 0.05;
+                if self.ambient < 0.0 {
+                    self.ambient = 0.0;
                 }
-                Key::Character("a") => {
-                    self.ambient -= 0.05;
-                    if self.ambient < 0.0 {
-                        self.ambient = 0.0;
-                    }
-                    return true;
+            }
+            (KeyCode::KeyW, _pressed) => {
+                self.diffuse += 0.05;
+            }
+            (KeyCode::KeyS, _pressed) => {
+                self.diffuse -= 0.05;
+                if self.diffuse < 0.0 {
+                    self.diffuse = 0.0;
                 }
-                Key::Character("w") => {
-                    self.diffuse += 0.05;
-                    return true;
+            }
+            (KeyCode::KeyE, _pressed) => {
+                self.specular += 0.05;
+            }
+            (KeyCode::KeyD, _pressed) => {
+                self.specular -= 0.05;
+                if self.specular < 0.0 {
+                    self.specular = 0.0;
                 }
-                Key::Character("s") => {
-                    self.diffuse -= 0.05;
-                    if self.diffuse < 0.0 {
-                        self.diffuse = 0.0;
-                    }
-                    return true;
+            }
+            (KeyCode::KeyR, _pressed) => {
+                self.shininess += 5.0;
+            }
+            (KeyCode::KeyF, _pressed) => {
+                self.shininess -= 5.0;
+                if self.shininess < 0.0 {
+                    self.shininess = 0.0;
                 }
-                Key::Character("e") => {
-                    self.specular += 0.05;
-                    return true;
+            }
+            (KeyCode::KeyT, _pressed) => {
+                self.min_dist += 0.2;
+            }
+            (KeyCode::KeyG, _pressed) => {
+                self.min_dist -= 0.2;
+                if self.min_dist < 0.0 {
+                    self.min_dist = 0.0;
                 }
-                Key::Character("d") => {
-                    self.specular -= 0.05;
-                    if self.specular < 0.0 {
-                        self.specular = 0.0;
-                    }
-                    return true;
+            }
+            (KeyCode::KeyY, _pressed) => {
+                self.max_dist += 1.0;
+            }
+            (KeyCode::KeyH, _pressed) => {
+                self.max_dist -= 1.0;
+                if self.max_dist < 0.0 {
+                    self.max_dist = 0.0;
                 }
-                Key::Character("r") => {
-                    self.shininess += 5.0;
-                    return true;
-                }
-                Key::Character("f") => {
-                    self.shininess -= 5.0;
-                    if self.shininess < 0.0 {
-                        self.shininess = 0.0;
-                    }
-                    return true;
-                }
-                Key::Character("t") => {
-                    self.min_dist += 0.2;
-                    return true;
-                }
-                Key::Character("g") => {
-                    self.min_dist -= 0.2;
-                    if self.min_dist < 0.0 {
-                        self.min_dist = 0.0;
-                    }
-                    return true;
-                }
-                Key::Character("y") => {
-                    self.max_dist += 1.0;
-                    return true;
-                }
-                Key::Character("h") => {
-                    self.max_dist -= 1.0;
-                    if self.max_dist < 0.0 {
-                        self.max_dist = 0.0;
-                    }
-                    return true;
-                }
-                _ => false,
-            },
-            _ => false,
+            }
+            _ => {},
         }
     }
 

@@ -8,7 +8,7 @@ use wgpu_lighting::vertex_data as vd;
 
 use winit::event_loop::EventLoop;
 
-use crate::app::Application;
+use crate::app::App;
 use crate::state::Vertex;
 
 fn create_vertices() -> (Vec<Vertex>, Vec<u16>, Vec<u16>) {
@@ -40,12 +40,12 @@ fn main() {
         index_data: &Vec<u16>,
         index_data2: &Vec<u16>,
         sample_count: u32,
-        title: &str,
+        title: &'static str,
     ) -> anyhow::Result<()> {
         env_logger::init();
 
-        let event_loop = EventLoop::builder().build()?;
-        let mut app = Application::new(
+        let event_loop = EventLoop::with_user_event().build()?;
+        let mut app = App::new(
             &vertex_data,
             &index_data,
             &index_data2,

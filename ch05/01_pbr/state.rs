@@ -3,7 +3,9 @@ use bytemuck::cast_slice;
 use cgmath::Matrix4;
 use std::mem;
 use winit::{
-    event::ElementState, event::KeyEvent, event::WindowEvent, keyboard::Key, window::Window,
+    event_loop::ActiveEventLoop,
+    keyboard::KeyCode,
+    window::Window,
 };
 
 use wgpu_lighting::common_instance;
@@ -229,22 +231,17 @@ impl State {
         &self.init.window
     }
 
-    pub fn size(&self) -> winit::dpi::PhysicalSize<u32> {
-        self.init.size
-    }
-
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.init.size = new_size;
+    pub fn resize(&mut self, width: u32, height: u32) {
+        if width > 0 && height > 0 {
             // The surface needs to be reconfigured every time the window is resized.
-            self.init.config.width = new_size.width;
-            self.init.config.height = new_size.height;
+            self.init.config.width = width;
+            self.init.config.height = height;
             self.init
                 .surface
                 .configure(&self.init.device, &self.init.config);
 
             self.project_mat =
-                ws::create_projection_mat(new_size.width as f32 / new_size.height as f32, true);
+                ws::create_projection_mat(width as f32 / height as f32, true);
             self.depth_texture_view = ws::create_depth_view(&self.init);
             if self.init.sample_count > 1 {
                 self.msaa_texture_view = ws::create_msaa_texture_view(&self.init);
@@ -252,59 +249,45 @@ impl State {
         }
     }
 
-    pub fn input(&mut self, event: &WindowEvent) -> bool {
-        match event {
-            WindowEvent::KeyboardInput {
-                event:
-                    KeyEvent {
-                        logical_key: key,
-                        state: ElementState::Pressed,
-                        ..
-                    },
-                ..
-            } => match key.as_ref() {
-                Key::Character("q") => {
-                    self.intensity += 10.0;
-                    println!("intensity = {}", self.intensity);
-                    return true;
+    pub fn handle_key(&mut self, event_loop: &ActiveEventLoop, key: KeyCode, pressed: bool) {
+        match (key, pressed) {
+            (KeyCode::Escape, true) => {
+                event_loop.exit();
+            }
+            (KeyCode::KeyQ, _pressed) => {
+                self.intensity += 10.0;
+                println!("intensity = {}", self.intensity);
+            }
+            (KeyCode::KeyA, _pressed) => {
+                self.intensity -= 10.0;
+                if self.intensity < 10.0 {
+                    self.intensity = 10.0;
                 }
-                Key::Character("a") => {
-                    self.intensity -= 10.0;
-                    if self.intensity < 10.0 {
-                        self.intensity = 10.0;
-                    }
-                    println!("intensity = {}", self.intensity);
-                    return true;
+                println!("intensity = {}", self.intensity);
+            }
+            (KeyCode::KeyW, _pressed) => {
+                self.roughness += 0.01;
+                println!("roughness = {}", self.roughness);
+            }
+            (KeyCode::KeyS, _pressed) => {
+                self.roughness -= 0.01;
+                if self.roughness < 0.05 {
+                    self.roughness = 0.05;
                 }
-                Key::Character("w") => {
-                    self.roughness += 0.01;
-                    println!("roughness = {}", self.roughness);
-                    return true;
+                println!("roughness = {}", self.roughness);
+            }
+            (KeyCode::KeyE, _pressed) => {
+                self.metallic += 0.01;
+                println!("metallic = {}", self.metallic);
+            }
+            (KeyCode::KeyD, _pressed) => {
+                self.metallic -= 0.01;
+                if self.metallic < 0.001 {
+                    self.metallic = 0.001;
                 }
-                Key::Character("s") => {
-                    self.roughness -= 0.01;
-                    if self.roughness < 0.05 {
-                        self.roughness = 0.05;
-                    }
-                    println!("roughness = {}", self.roughness);
-                    return true;
-                }
-                Key::Character("e") => {
-                    self.metallic += 0.01;
-                    println!("metallic = {}", self.metallic);
-                    return true;
-                }
-                Key::Character("d") => {
-                    self.metallic -= 0.01;
-                    if self.metallic < 0.001 {
-                        self.metallic = 0.001;
-                    }
-                    println!("metallic = {}", self.metallic);
-                    return true;
-                }
-                _ => false,
-            },
-            _ => false,
+                println!("metallic = {}", self.metallic);
+            }
+            _ => {},
         }
     }
 
