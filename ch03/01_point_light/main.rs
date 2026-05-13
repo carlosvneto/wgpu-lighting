@@ -3,8 +3,8 @@ mod app;
 
 mod state;
 
-use winit::event_loop::EventLoop;
 use app::App;
+use winit::event_loop::EventLoop;
 
 fn main() {
     let mut sample_count = 1 as u32;

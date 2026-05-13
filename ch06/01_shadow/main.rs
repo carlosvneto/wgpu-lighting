@@ -3,8 +3,8 @@ mod app;
 
 mod state;
 
-use winit::event_loop::EventLoop;
 use app::App;
+use winit::event_loop::EventLoop;
 
 fn main() {
     let title = "ch06 shadow mapping";

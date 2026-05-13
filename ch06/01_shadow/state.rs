@@ -1,13 +1,9 @@
-use std::sync::Arc;
 use bytemuck::cast_slice;
-use cgmath::{Matrix, Matrix4, SquareMatrix};
-use rand::Rng;
+use glam::Mat4;
+use rand::RngExt;
 use std::mem;
-use winit::{
-    event_loop::ActiveEventLoop,
-    keyboard::KeyCode,
-    window::Window,
-};
+use std::sync::Arc;
+use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
 use wgpu_lighting::common_instance;
 use wgpu_lighting::wgpu_simplified as ws;
@@ -33,7 +29,7 @@ fn create_transform_mat() -> (Vec<Scene>, Vec<[f32; 16]>, Vec<[f32; 16]>, Vec<[f
     let rotation_cube = [0.0f32, 0.0, 0.0];
     let scale_cube = [30.0f32, 0.1, 20.0];
     let m_cube = ws::create_model_mat(translation_cube, rotation_cube, scale_cube);
-    let n_cube = (m_cube.invert().unwrap()).transpose();
+    let n_cube = (m_cube.inverse()).transpose();
     let c_cube = [0.5f32, 0.5, 0.7, 1.0];
     model_mat.push(*(m_cube.as_ref()));
     normal_mat.push(*(n_cube.as_ref()));
@@ -50,8 +46,13 @@ fn create_transform_mat() -> (Vec<Scene>, Vec<[f32; 16]>, Vec<[f32; 16]>, Vec<[f
     let rotation_torus = [1.57f32, 0.0, 0.0];
     let scale_torus = [4.0f32, 4.0, 4.0];
     let m_torus = ws::create_model_mat(translation_torus, rotation_torus, scale_torus);
-    let n_torus = (m_torus.invert().unwrap()).transpose();
-    let c_torus = [rng.random::<f32>(), rng.random::<f32>(), rng.random::<f32>(), 1.0];
+    let n_torus = (m_torus.inverse()).transpose();
+    let c_torus = [
+        rng.random::<f32>(),
+        rng.random::<f32>(),
+        rng.random::<f32>(),
+        1.0,
+    ];
     model_mat.push(*(m_torus.as_ref()));
     normal_mat.push(*(n_torus.as_ref()));
     color_vec.push(c_torus);
@@ -70,14 +71,23 @@ fn create_transform_mat() -> (Vec<Scene>, Vec<[f32; 16]>, Vec<[f32; 16]>, Vec<[f
         }
         let tx = v1 * (4.0 + rng.random::<f32>() * 12.0);
         let translation_sphere = [tx, -11.0 + rng.random::<f32>() * 15.0, -20.0 + tx];
-        let rotation_sphere = [rng.random::<f32>(), rng.random::<f32>(), rng.random::<f32>()];
+        let rotation_sphere = [
+            rng.random::<f32>(),
+            rng.random::<f32>(),
+            rng.random::<f32>(),
+        ];
         let s = [0.5f32, rng.random::<f32>()]
             .iter()
             .fold(f32::NEG_INFINITY, |a, &b| a.max(b));
         let scale_sphere = [s, s, s];
         let m_sphere = ws::create_model_mat(translation_sphere, rotation_sphere, scale_sphere);
-        let n_sphere = (m_torus.invert().unwrap()).transpose();
-        let c_sphere = [rng.random::<f32>(), rng.random::<f32>(), rng.random::<f32>(), 1.0];
+        let n_sphere = (m_torus.inverse()).transpose();
+        let c_sphere = [
+            rng.random::<f32>(),
+            rng.random::<f32>(),
+            rng.random::<f32>(),
+            1.0,
+        ];
         model_mat.push(*(m_sphere.as_ref()));
         normal_mat.push(*(n_sphere.as_ref()));
         color_vec.push(c_sphere);
@@ -103,8 +113,8 @@ pub struct State {
     index_buffers: Vec<wgpu::Buffer>,
     uniform_bind_groups: Vec<wgpu::BindGroup>,
     uniform_buffers: Vec<wgpu::Buffer>,
-    view_mat: Matrix4<f32>,
-    project_mat: Matrix4<f32>,
+    view_mat: Mat4,
+    project_mat: Mat4,
     depth_texture_views: Vec<wgpu::TextureView>,
     indices_lens: Vec<u32>,
     animation_speed: f32,
@@ -135,7 +145,7 @@ impl State {
         // uniform data
         let camera_position = (0.0, 10.0, 20.0).into();
         let look_direction = (0.0, 0.0, 0.0).into();
-        let up_direction = cgmath::Vector3::unit_y();
+        let up_direction = (0.0, 1.0, 0.0).into();
 
         let (view_mat, project_mat, vp_mat) = ws::create_vp_mat(
             camera_position,
@@ -330,11 +340,11 @@ impl State {
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
                 bind_group_layouts: &[
-                    &vert_bind_group_layout,
-                    &frag_bind_group_layout,
-                    &frag_bind_group_layout2,
+                    Some(&vert_bind_group_layout),
+                    Some(&frag_bind_group_layout),
+                    Some(&frag_bind_group_layout2),
                 ],
-                push_constant_ranges: &[],
+                immediate_size: 0,
             });
 
         let mut ppl = ws::IRenderPipeline {
@@ -357,8 +367,8 @@ impl State {
             init.device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout 2"),
-                    bind_group_layouts: &[&shadow_bind_group_layout],
-                    push_constant_ranges: &[],
+                    bind_group_layouts: &[Some(&shadow_bind_group_layout)],
+                    immediate_size: 0,
                 });
 
         let pipeline2 = init
@@ -379,13 +389,13 @@ impl State {
                 },
                 depth_stencil: Some(wgpu::DepthStencilState {
                     format: wgpu::TextureFormat::Depth24Plus,
-                    depth_write_enabled: true,
-                    depth_compare: wgpu::CompareFunction::LessEqual,
+                    depth_write_enabled: Some(true),
+                    depth_compare: Some(wgpu::CompareFunction::LessEqual),
                     stencil: wgpu::StencilState::default(),
                     bias: wgpu::DepthBiasState::default(),
                 }),
                 multisample: wgpu::MultisampleState::default(),
-                multiview: None,
+                multiview_mask: None,
                 cache: None,
             });
 
@@ -447,17 +457,16 @@ impl State {
                 .surface
                 .configure(&self.init.device, &self.init.config);
 
-            self.project_mat =
-                ws::create_projection_mat(width as f32 / height as f32, true);
+            self.project_mat = ws::create_projection_mat(width as f32 / height as f32, true);
             self.depth_texture_views[0] = ws::create_depth_view(&self.init);
         }
     }
 
-    pub fn handle_key(&mut self, event_loop: &ActiveEventLoop, key: KeyCode, pressed: bool) {
+    pub fn handle_key_input(&mut self, event_loop: &ActiveEventLoop, key: KeyCode, pressed: bool) {
         match (key, pressed) {
             (KeyCode::Escape, true) => {
                 event_loop.exit();
-            } 
+            }
             (KeyCode::KeyQ, _pressed) => {
                 self.ambient += 0.01;
             }
@@ -494,7 +503,7 @@ impl State {
                     self.shininess = 0.0;
                 }
             }
-            _ => {},
+            _ => {}
         }
     }
 
@@ -512,7 +521,7 @@ impl State {
         let light_mat = ws::create_view_mat(
             self.light_position.into(),
             [0.0, 0.0, 0.0].into(),
-            cgmath::Vector3::unit_y(),
+            [0.0, 1.0, 0.0].into(),
         );
         let mut light_projection_mat = ws::create_ortho_mat(-40.0, 40.0, -40.0, 40.0, -50.0, 200.0);
         light_projection_mat = light_projection_mat * light_mat;
@@ -526,7 +535,7 @@ impl State {
         let torus = &mut self.scenes.0[1];
         torus.rotation[1] = 2.0 * dt;
         let m_torus = ws::create_model_mat(torus.translation, torus.rotation, torus.scale);
-        let n_torus = (m_torus.invert().unwrap()).transpose();
+        let n_torus = m_torus.inverse().transpose();
         self.scenes.1[1] = *m_torus.as_ref();
         self.scenes.2[1] = *n_torus.as_ref();
 
@@ -537,7 +546,7 @@ impl State {
                 sphere.v *= -1.0;
             }
             let m_sphere = ws::create_model_mat(sphere.translation, sphere.rotation, sphere.scale);
-            let n_sphere = (m_sphere.invert().unwrap()).transpose();
+            let n_sphere = m_sphere.inverse().transpose();
             self.scenes.1[i] = *m_sphere.as_ref();
             self.scenes.2[i] = *n_sphere.as_ref();
         }
@@ -565,8 +574,31 @@ impl State {
             .write_buffer(&self.uniform_buffers[6], 0, cast_slice(material.as_ref()));
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        let output = self.init.surface.get_current_texture()?;
+    pub fn render(&mut self) -> anyhow::Result<()> {
+        let output = match self.init.surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(surface_texture) => surface_texture,
+            wgpu::CurrentSurfaceTexture::Suboptimal(surface_texture) => {
+                self.init
+                    .surface
+                    .configure(&self.init.device, &self.init.config);
+                surface_texture
+            }
+            wgpu::CurrentSurfaceTexture::Timeout
+            | wgpu::CurrentSurfaceTexture::Occluded
+            | wgpu::CurrentSurfaceTexture::Validation => {
+                // Skip this frame
+                return Ok(());
+            }
+            wgpu::CurrentSurfaceTexture::Outdated => {
+                self.init
+                    .surface
+                    .configure(&self.init.device, &self.init.config);
+                return Ok(());
+            }
+            wgpu::CurrentSurfaceTexture::Lost => {
+                anyhow::bail!("Lost device");
+            }
+        };
 
         let view = output
             .texture
@@ -594,6 +626,7 @@ impl State {
                 }),
                 occlusion_query_set: None,
                 timestamp_writes: None,
+                multiview_mask: None,
             });
 
             shadow_pass.set_pipeline(&self.pipelines[1]);
@@ -630,6 +663,7 @@ impl State {
                 depth_stencil_attachment: Some(depth_attachment),
                 occlusion_query_set: None,
                 timestamp_writes: None,
+                multiview_mask: None,
             });
 
             render_pass.set_pipeline(&self.pipelines[0]);

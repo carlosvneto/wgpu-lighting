@@ -1,12 +1,8 @@
-use std::sync::Arc;
 use bytemuck::cast_slice;
-use cgmath::{Matrix4, Point3};
+use glam::{Mat4, Vec3};
 use std::mem;
-use winit::{
-    event_loop::ActiveEventLoop,
-    keyboard::KeyCode,
-    window::Window,
-};
+use std::sync::Arc;
+use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
 use wgpu_lighting::common_instance;
 use wgpu_lighting::wgpu_simplified as ws;
@@ -22,8 +18,8 @@ pub struct State {
     index_buffers: Vec<wgpu::Buffer>,
     uniform_bind_groups: Vec<wgpu::BindGroup>,
     uniform_buffers: Vec<wgpu::Buffer>,
-    view_mat: Matrix4<f32>,
-    project_mat: Matrix4<f32>,
+    view_mat: Mat4,
+    project_mat: Mat4,
     msaa_texture_view: wgpu::TextureView,
     depth_texture_view: wgpu::TextureView,
     indices_lens: Vec<u32>,
@@ -51,8 +47,8 @@ impl State {
         // uniform data
         let camera_position = (8.0, 8.0, 16.0).into();
         let look_direction = (0.0, 0.0, 0.0).into();
-        let up_direction = cgmath::Vector3::unit_y();
-        let light_direction: Point3<f32> = (0.2, 1.0, 0.3).into();
+        let up_direction = (0.0, 1.0, 0.0).into();
+        let light_direction = Vec3::new(0.2, 1.0, 0.3);
 
         let (model_mat, normal_mat, color_vec) =
             common_instance::create_transform_mat_color(objects_count, true);
@@ -189,8 +185,8 @@ impl State {
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&vert_bind_group_layout, &frag_bind_group_layout],
-                push_constant_ranges: &[],
+                bind_group_layouts: &[Some(&vert_bind_group_layout), Some(&frag_bind_group_layout)],
+                immediate_size: 0,
             });
 
         let mut ppl = ws::IRenderPipeline {
@@ -250,8 +246,7 @@ impl State {
                 .surface
                 .configure(&self.init.device, &self.init.config);
 
-            self.project_mat =
-                ws::create_projection_mat(width as f32 / height as f32, true);
+            self.project_mat = ws::create_projection_mat(width as f32 / height as f32, true);
             self.depth_texture_view = ws::create_depth_view(&self.init);
             if self.init.sample_count > 1 {
                 self.msaa_texture_view = ws::create_msaa_texture_view(&self.init);
@@ -259,11 +254,11 @@ impl State {
         }
     }
 
-    pub fn handle_key(&mut self, event_loop: &ActiveEventLoop, key: KeyCode, pressed: bool) {
+    pub fn handle_key_input(&mut self, event_loop: &ActiveEventLoop, key: KeyCode, pressed: bool) {
         match (key, pressed) {
             (KeyCode::Escape, true) => {
                 event_loop.exit();
-            } 
+            }
             (KeyCode::KeyQ, _pressed) => {
                 self.ambient += 0.01;
             }
@@ -300,7 +295,7 @@ impl State {
                     self.shininess = 0.0;
                 }
             }
-            _ => {},
+            _ => {}
         }
     }
 
@@ -328,8 +323,31 @@ impl State {
             .write_buffer(&self.uniform_buffers[5], 0, cast_slice(material.as_ref()));
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        let output = self.init.surface.get_current_texture()?;
+    pub fn render(&mut self) -> anyhow::Result<()> {
+        let output = match self.init.surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(surface_texture) => surface_texture,
+            wgpu::CurrentSurfaceTexture::Suboptimal(surface_texture) => {
+                self.init
+                    .surface
+                    .configure(&self.init.device, &self.init.config);
+                surface_texture
+            }
+            wgpu::CurrentSurfaceTexture::Timeout
+            | wgpu::CurrentSurfaceTexture::Occluded
+            | wgpu::CurrentSurfaceTexture::Validation => {
+                // Skip this frame
+                return Ok(());
+            }
+            wgpu::CurrentSurfaceTexture::Outdated => {
+                self.init
+                    .surface
+                    .configure(&self.init.device, &self.init.config);
+                return Ok(());
+            }
+            wgpu::CurrentSurfaceTexture::Lost => {
+                anyhow::bail!("Lost device");
+            }
+        };
 
         let view = output
             .texture
@@ -358,6 +376,7 @@ impl State {
                 depth_stencil_attachment: Some(depth_attachment),
                 occlusion_query_set: None,
                 timestamp_writes: None,
+                multiview_mask: None,
             });
 
             render_pass.set_pipeline(&self.pipeline);

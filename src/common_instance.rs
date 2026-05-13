@@ -1,8 +1,7 @@
 use crate::vertex_data as vd;
 use crate::wgpu_simplified as ws;
-use bytemuck::{cast_slice, Pod, Zeroable};
-use cgmath::{Matrix, SquareMatrix};
-use rand::Rng;
+use bytemuck::{Pod, Zeroable, cast_slice};
+use rand::RngExt;
 use wgpu::util::DeviceExt;
 
 #[repr(C)]
@@ -129,11 +128,20 @@ pub fn create_transform_mat_color(
                 -30.0 - rng.random::<f32>() * 50.0,
             ];
         }
-        let rotation = [rng.random::<f32>(), rng.random::<f32>(), rng.random::<f32>()];
+        let rotation = [
+            rng.random::<f32>(),
+            rng.random::<f32>(),
+            rng.random::<f32>(),
+        ];
         let scale = [1.0, 1.0, 1.0];
         let m = ws::create_model_mat(translation, rotation, scale);
-        let n = (m.invert().unwrap()).transpose();
-        let color = [rng.random::<f32>(), rng.random::<f32>(), rng.random::<f32>(), 1.0];
+        let n = m.inverse().transpose();
+        let color = [
+            rng.random::<f32>(),
+            rng.random::<f32>(),
+            rng.random::<f32>(),
+            1.0,
+        ];
         model_mat.push(*(m.as_ref()));
         normal_mat.push(*(n.as_ref()));
         color_vec.push(color);

@@ -41,7 +41,7 @@ fn main() {
         index_data2: &Vec<u16>,
         sample_count: u32,
         title: &'static str,
-    ) -> anyhow::Result<()>  {
+    ) -> anyhow::Result<()> {
         env_logger::init();
 
         let event_loop = EventLoop::with_user_event().build()?;
